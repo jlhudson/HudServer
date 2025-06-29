@@ -51,10 +51,10 @@ git --version || log_error "Git is not installed or not in PATH."
 
 log_info "Verifying Maven installation..."
 if ! mvn -version &>/dev/null; then
-    log_info "Maven is not working properly with Java 24. Installing compatible Maven version..."
+    log_info "Maven is not working properly with Java 24. Trying latest Maven version..."
 
-    # Download and install Maven 3.9.6 which supports Java 24
-    MAVEN_VERSION="3.9.6"
+    # Try latest Maven version first (3.9.10)
+    MAVEN_VERSION="3.9.10"
     MAVEN_URL="https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
     MAVEN_ARCHIVE="apache-maven-${MAVEN_VERSION}-bin.tar.gz"
 
@@ -80,7 +80,28 @@ if ! mvn -version &>/dev/null; then
     rm /tmp/${MAVEN_ARCHIVE}
 
     log_info "Verifying new Maven installation..."
-    /opt/maven/bin/mvn -version || log_error "New Maven installation failed verification."
+    if ! /opt/maven/bin/mvn -version &>/dev/null; then
+        log_info "Maven 3.9.10 still has issues with Java 24. Installing Java 17 as fallback..."
+
+        # Install Java 17 as fallback for Maven builds
+        apt install -y openjdk-17-jdk || log_error "Failed to install Java 17."
+
+        # Create a wrapper script that uses Java 17 for Maven
+        cat > /opt/maven/bin/mvn-java17 << 'EOF'
+#!/bin/bash
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-arm64
+export PATH=$JAVA_HOME/bin:$PATH
+exec /opt/maven/bin/mvn "$@"
+EOF
+        chmod +x /opt/maven/bin/mvn-java17
+
+        log_info "Testing Maven with Java 17..."
+        /opt/maven/bin/mvn-java17 -version || log_error "Maven with Java 17 fallback failed."
+
+        log_info "Maven will use Java 17 for builds. Created mvn-java17 wrapper."
+    else
+        log_info "Maven 3.9.10 is working with Java 24."
+    fi
 else
     log_info "Maven is working correctly."
 fi
@@ -114,8 +135,11 @@ sleep 5 # Give time for network to connect
 
 # --- 4. Build Spring Boot Application ---
 log_info "Building Spring Boot application with Maven..."
-# Use the Maven that's now properly configured
-if [ -f "/opt/maven/bin/mvn" ]; then
+# Determine which Maven command to use
+if [ -f "/opt/maven/bin/mvn-java17" ]; then
+    log_info "Using Maven with Java 17 fallback for build compatibility..."
+    /opt/maven/bin/mvn-java17 clean package -DskipTests || log_error "Maven build failed."
+elif [ -f "/opt/maven/bin/mvn" ]; then
     /opt/maven/bin/mvn clean package -DskipTests || log_error "Maven build failed."
 else
     mvn clean package -DskipTests || log_error "Maven build failed."
