@@ -6,7 +6,8 @@ GIT_BRANCH="main"
 APP_DIR="/opt/hud-server"
 JAR_NAME="hudson-0.0.1-SNAPSHOT.jar" # IMPORTANT: Update if your artifactId/version changes
 SERVICE_NAME="hud-server.service"
-JAVA_VERSION="24" # Expected Java version for your app
+JAVA_VERSION="17" # Using already installed Java 17
+
 WIFI_COUNTRY_CODE="AU" # Your Wi-Fi country code
 
 WIFI_SSID1="HudsonNetwork" #
@@ -34,51 +35,22 @@ if [ "$EUID" -ne 0 ]; then
     log_error "Please run this script with sudo: sudo ./setup.sh"
 fi
 
-# --- 1. Install Dependencies ---
+# --- 1. Install System Dependencies ---
 log_info "Updating package lists..."
 apt update || log_error "Failed to update package lists."
 
-log_info "Installing Git, Maven, and UFW..."
-apt install -y git maven ufw || log_error "Failed to install Git, Maven, or UFW."
+log_info "Installing UFW (firewall)..."
+apt install -y ufw || log_error "Failed to install UFW."
 
-# --- 2. Install Java Development Kit (JDK) ---
-# NOTE: JDK 24 might not be directly available in the standard apt repositories yet.
-# If apt install fails for 24, we will fall back to downloading and installing manually.
-log_info "Attempting to install OpenJDK ${JAVA_VERSION}..."
-apt install -y openjdk-${JAVA_VERSION}-jdk || {
-    log_info "OpenJDK ${JAVA_VERSION} not found via apt. Attempting direct download and install."
-
-    # Find the latest JDK 24 for ARM64 from Adoptium (Eclipse Temurin)
-    # This URL might need to be updated periodically if new versions are released.
-    # Check https://adoptium.net/temurin/releases/ for the latest direct download link.
-    JDK_URL="https://api.adoptium.net/v3/binary/latest/${JAVA_VERSION}/ga/linux/aarch64/jdk/hotspot/normal/eclipse"
-    JDK_ARCHIVE="OpenJDK${JAVA_VERSION}.tar.gz"
-
-    log_info "Downloading JDK ${JAVA_VERSION} from Adoptium..."
-    wget -O /tmp/${JDK_ARCHIVE} "${JDK_URL}" || log_error "Failed to download JDK ${JAVA_VERSION}."
-
-    log_info "Extracting JDK to /opt/jdk..."
-    mkdir -p /opt/jdk
-    tar -xzf /tmp/${JDK_ARCHIVE} -C /opt/jdk/ || log_error "Failed to extract JDK."
-
-    # Find the extracted JDK directory (e.g., jdk-24.0.1+12)
-    EXTRACTED_JDK_DIR=$(find /opt/jdk -maxdepth 1 -mindepth 1 -name "jdk-${JAVA_VERSION}*" -type d | head -n 1)
-    if [ -z "$EXTRACTED_JDK_DIR" ]; then
-        log_error "Failed to find extracted JDK directory."
-    fi
-
-    log_info "Configuring default Java environment..."
-    update-alternatives --install "/usr/bin/java" "java" "${EXTRACTED_JDK_DIR}/bin/java" 1
-    update-alternatives --install "/usr/bin/javac" "javac" "${EXTRACTED_JDK_DIR}/bin/javac" 1
-    update-alternatives --set java "${EXTRACTED_JDK_DIR}/bin/java"
-    update-alternatives --set javac "${EXTRACTED_JDK_DIR}/bin/javac"
-
-    log_info "Cleaning up downloaded JDK archive..."
-    rm /tmp/${JDK_ARCHIVE}
-}
-
+# --- 2. Verify Required Tools ---
 log_info "Verifying Java installation..."
-java -version || log_error "Java installation failed verification."
+java -version || log_error "Java is not installed or not in PATH."
+
+log_info "Verifying Maven installation..."
+mvn -version || log_error "Maven is not installed or not in PATH."
+
+log_info "Verifying Git installation..."
+git --version || log_error "Git is not installed or not in PATH."
 
 # --- 3. Configure Wi-Fi ---
 log_info "Configuring Wi-Fi networks..."
