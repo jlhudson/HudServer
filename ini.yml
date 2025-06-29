@@ -1,0 +1,17 @@
+[Unit]
+  Description=Hudson's Spring Boot Web Application
+  After=network.target
+  
+  [Service]
+  User=pi # Or your dedicated non-root user
+  Group=pi # Or your dedicated non-root user
+  Type=simple
+  ExecStart=/usr/bin/java -Xms128m -Xmx256m -jar {{APP_DIR}}/{{JAR_NAME}}
+  Restart=on-failure
+  RestartSec=10s
+  SuccessExitStatus=143
+  StandardOutput=journal
+  StandardError=journal
+  
+  [Install]
+  WantedBy=multi-user.target
