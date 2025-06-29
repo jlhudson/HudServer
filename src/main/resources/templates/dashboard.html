@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">HudServer Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .content {
+            padding: 30px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .info-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        .info-card h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.2em;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 600;
+            color: #555;
+        }
+        .value {
+            color: #333;
+            font-family: monospace;
+        }
+        .refresh-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><span class="status-indicator"></span><span th:text="${title}">HudServer Dashboard</span></h1>
+        <p th:text="${message}">Welcome to your Raspberry Pi HudServer!</p>
+    </div>
+
+    <div class="content">
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>📊 System Status</h3>
+                <div class="info-item">
+                    <span class="label">Current Time:</span>
+                    <span class="value" th:text="${currentTime}">2025-06-29 12:00:00</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Status:</span>
+                    <span class="value" style="color: #4CAF50;">🟢 Running</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3>☕ Java Environment</h3>
+                <div class="info-item">
+                    <span class="label">Java Version:</span>
+                    <span class="value" th:text="${javaVersion}">17.0.15</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">OS Name:</span>
+                    <span class="value" th:text="${osName}">Linux</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Architecture:</span>
+                    <span class="value" th:text="${osArch}">aarch64</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3>💾 Memory Usage</h3>
+                <div class="info-item">
+                    <span class="label">Total Memory:</span>
+                    <span class="value" th:text="${totalMemory}">256 MB</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Used Memory:</span>
+                    <span class="value" th:text="${usedMemory}">128 MB</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Free Memory:</span>
+                    <span class="value" th:text="${freeMemory}">128 MB</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3>🔗 API Endpoints</h3>
+                <div class="info-item">
+                    <span class="label"><a href="/hello" style="color: #2196F3; text-decoration: none;">/hello</a></span>
+                    <span class="value">Simple greeting</span>
+                </div>
+                <div class="info-item">
+                    <span class="label"><a href="/api/status" style="color: #2196F3; text-decoration: none;">/api/status</a></span>
+                    <span class="value">JSON status</span>
+                </div>
+                <div class="info-item">
+                    <span class="label"><a href="/api/system" style="color: #2196F3; text-decoration: none;">/api/system</a></span>
+                    <span class="value">System info</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="refresh-btn" onclick="location.reload()">
+            🔄 Refresh Dashboard
+        </button>
+    </div>
+</div>
+</body>
+</html>
