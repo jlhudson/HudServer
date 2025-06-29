@@ -1,0 +1,17 @@
+[Unit]
+Description=Hudson's Spring Boot Web Application
+After=network.target
+
+[Service]
+User=pi
+Group=pi
+Type=simple
+ExecStart=/usr/bin/java -Xms128m -Xmx256m -jar /opt/hud-server/hudson-0.0.1-SNAPSHOT.jar # Adjust Xmx if more RAM is available/needed
+Restart=on-failure
+RestartSec=10s
+SuccessExitStatus=143
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

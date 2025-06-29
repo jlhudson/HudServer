@@ -3,7 +3,7 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# These variables will be replaced by setup_pi.sh
+# These variables will be replaced by pi-setup.sh
 GITHUB_REPO_URL="{{GITHUB_REPO_URL}}"
 REPO_NAME="{{REPO_NAME}}"
 APP_DIR="{{APP_DIR}}"
