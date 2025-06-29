@@ -6,7 +6,7 @@ GIT_BRANCH="main"
 APP_DIR="/opt/hud-server"
 JAR_NAME="hudson-0.0.1-SNAPSHOT.jar" # IMPORTANT: Update if your artifactId/version changes
 SERVICE_NAME="hud-server.service"
-JAVA_VERSION="17" # Using already installed Java 17
+JAVA_VERSION="24" # Using already installed Java 24
 
 WIFI_COUNTRY_CODE="AU" # Your Wi-Fi country code
 
@@ -46,11 +46,44 @@ apt install -y ufw || log_error "Failed to install UFW."
 log_info "Verifying Java installation..."
 java -version || log_error "Java is not installed or not in PATH."
 
-log_info "Verifying Maven installation..."
-mvn -version || log_error "Maven is not installed or not in PATH."
-
 log_info "Verifying Git installation..."
 git --version || log_error "Git is not installed or not in PATH."
+
+log_info "Verifying Maven installation..."
+if ! mvn -version &>/dev/null; then
+    log_info "Maven is not working properly with Java 24. Installing compatible Maven version..."
+
+    # Download and install Maven 3.9.6 which supports Java 24
+    MAVEN_VERSION="3.9.6"
+    MAVEN_URL="https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+    MAVEN_ARCHIVE="apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+
+    log_info "Downloading Maven ${MAVEN_VERSION}..."
+    wget -O /tmp/${MAVEN_ARCHIVE} "${MAVEN_URL}" || log_error "Failed to download Maven."
+
+    log_info "Installing Maven to /opt/maven..."
+    mkdir -p /opt/maven
+    tar -xzf /tmp/${MAVEN_ARCHIVE} -C /opt/maven/ --strip-components=1 || log_error "Failed to extract Maven."
+
+    log_info "Setting up Maven environment..."
+    # Update alternatives to use the new Maven
+    update-alternatives --install "/usr/bin/mvn" "mvn" "/opt/maven/bin/mvn" 1
+    update-alternatives --set mvn "/opt/maven/bin/mvn"
+
+    # Set MAVEN_HOME environment variable
+    echo 'export MAVEN_HOME=/opt/maven' >> /etc/environment
+    echo 'export PATH=$PATH:$MAVEN_HOME/bin' >> /etc/environment
+    export MAVEN_HOME=/opt/maven
+    export PATH=$PATH:$MAVEN_HOME/bin
+
+    log_info "Cleaning up Maven archive..."
+    rm /tmp/${MAVEN_ARCHIVE}
+
+    log_info "Verifying new Maven installation..."
+    /opt/maven/bin/mvn -version || log_error "New Maven installation failed verification."
+else
+    log_info "Maven is working correctly."
+fi
 
 # --- 3. Configure Wi-Fi ---
 log_info "Configuring Wi-Fi networks..."
@@ -81,10 +114,12 @@ sleep 5 # Give time for network to connect
 
 # --- 4. Build Spring Boot Application ---
 log_info "Building Spring Boot application with Maven..."
-# Assuming script is run from the root of the cloned repo (e.g., /home/pi/HudServer)
-# Build from the current directory (which is the repo root)
-# The JAR will be in target/
-mvn clean package -DskipTests || log_error "Maven build failed."
+# Use the Maven that's now properly configured
+if [ -f "/opt/maven/bin/mvn" ]; then
+    /opt/maven/bin/mvn clean package -DskipTests || log_error "Maven build failed."
+else
+    mvn clean package -DskipTests || log_error "Maven build failed."
+fi
 
 # --- 5. Deploy Application and Setup Systemd Service ---
 log_info "Creating application directory ${APP_DIR}..."
