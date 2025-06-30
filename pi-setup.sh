@@ -10,7 +10,7 @@ WIFI_SSID1="HudsonNetwork"
 WIFI_PSK1="Budgies123"
 WIFI_PRIORITY1=10
 
-WIFI_SSID2="Claust wifi"
+WIFI_SSID2="CLAustWifi"
 WIFI_PSK2="cla*wpa-psk"
 WIFI_PRIORITY2=5
 
